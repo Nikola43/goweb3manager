@@ -58,7 +58,7 @@ const (
 	HighLogLevel   LogLevel = 3
 )
 
-var defaultGasLimit = uint64(100000)
+var defaultGasLimit = uint64(210000)
 var logLevel = HighLogLevel
 
 type Account struct {
@@ -157,6 +157,36 @@ func NewHttpWeb3Client(rpcUrl string) *ethclient.Client {
 	}
 
 	return client
+}
+
+func (w *Web3GolangHelper) AddAccount(pk string) {
+
+	// create privateKey from string key
+	privateKey, privateKeyErr := crypto.HexToECDSA(pk)
+	if privateKeyErr != nil {
+		fmt.Println(privateKeyErr)
+	}
+
+	//fmt.Println(hexutil.Encode(privateKeyBytes)[2:]) // fad9c8855b740a0b7ed4c221dbad0f33a83a49cad6b3fe8d5817ac83d38b6a19
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
+	}
+
+	publicKeyBytes := crypto.FromECDSAPub(publicKeyECDSA)
+	//fmt.Println(hexutil.Encode(publicKeyBytes)[4:]) // 9a7df67f79246283fdc93af76d4f8cdd62c4886e8cd870944e817dd0b97934fdd7719d0810951e03418205868a5c1b40b192451367f28e0088dd75e15de40c05
+
+	address := crypto.PubkeyToAddress(*publicKeyECDSA).Hex()
+	fmt.Println(address) // 0x96216849c49358B10257cb55b28eA603c874b05E
+
+	hash := sha3.NewLegacyKeccak256()
+	hash.Write(publicKeyBytes[1:])
+	//fmt.Println(hexutil.Encode(hash.Sum(nil)[12:])) // 0x96216849c49358b10257cb55b28ea603c874b05e
+
+	add := common.HexToAddress(address)
+	w.accounts = append(w.accounts, &add)
 }
 
 func (w *Web3GolangHelper) CurrentBlockNumber() uint64 {
@@ -392,14 +422,14 @@ func (w *Web3GolangHelper) SendTokens(tokenAddressString, toAddressString string
 
 	fmt.Println("fromAddress: " + fromAddress.Hex())
 	fmt.Println("paddedAddress", hexutil.Encode(paddedAddress)) // 0x0000000000000000000000004592d8f8d7b001e72cb26a73e4fa1806a51ac79d
-	fmt.Println("paddedAmount", hexutil.Encode(paddedAmount)) // 0x0000000000000000000000004592d8f8d7b001e72cb26a73e4fa1806a51ac79d
-	fmt.Println("methodID", hexutil.Encode(methodID)) // 0x0000000000000000000000004592d8f8d7b001e72cb26a73e4fa1806a51ac79d
-
+	fmt.Println("paddedAmount", hexutil.Encode(paddedAmount))   // 0x0000000000000000000000004592d8f8d7b001e72cb26a73e4fa1806a51ac79d
+	fmt.Println("methodID", hexutil.Encode(methodID))           // 0x0000000000000000000000004592d8f8d7b001e72cb26a73e4fa1806a51ac79d
 
 	txData := BuildTxData(methodID, paddedAddress, paddedAmount)
 
 	//estimateGas := w.EstimateGas(tokenAddressString, txData)
-	txId, txNonce, err := w.SignAndSendTransaction(toAddressString, ToWei(value, 18), txData, nonce, nil, nil, pk)
+	usedGasPrice, _ := w.selectClient().SuggestGasPrice(context.Background())
+	txId, txNonce, err := w.SignAndSendTransaction(toAddressString, ToWei(value, 18), txData, nonce, big.NewInt(10000), usedGasPrice.Uint64(), pk)
 	if err != nil {
 		return "", big.NewInt(0), err
 	}
@@ -421,17 +451,55 @@ func (w *Web3GolangHelper) selectClient() *ethclient.Client {
 	return selectedClient
 }
 
-func (w *Web3GolangHelper) SendEth(fromAddress common.Address, toAddressString string, value string, pk string) (string, *big.Int, error) {
+func (w *Web3GolangHelper) SendEth(toAddressString string, value int64, pk string) (string, uint64, error) {
 
-	txId, nonce, err := w.SignAndSendTransaction(toAddressString, ToWei(value, 18), make([]byte, 0), w.PendingNonce(fromAddress), nil, nil, pk)
-	if err != nil {
-		return "", big.NewInt(0), err
+	privateKey, err := crypto.HexToECDSA(pk)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		log.Fatal("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
 	}
 
-	return txId, nonce, nil
+	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nonce, err := w.httpClient.PendingNonceAt(context.Background(), fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gasLimit := uint64(21000)                // in units
+	gasPrice, err := w.httpClient.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	toAddress := common.HexToAddress("0x4592d8f8d7b001e72cb26a73e4fa1806a51ac79d")
+	var data []byte
+	tx := types.NewTransaction(nonce, toAddress, big.NewInt(value), gasLimit, gasPrice, data)
+
+	chainID, err := w.httpClient.NetworkID(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = w.httpClient.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("tx sent: %s\n", signedTx.Hash().Hex())
+	return signedTx.Hash().Hex(), nonce, nil
 }
 
-func (w *Web3GolangHelper) SignAndSendTransaction(toAddressString string, value *big.Int, data []byte, nonce *big.Int, customGasPrice interface{}, customGasLimit interface{}, pk string) (string, *big.Int, error) {
+func (w *Web3GolangHelper) SignAndSendTransaction(toAddressString string, value *big.Int, data []byte, nonce *big.Int, customGasPrice *big.Int, customGasLimit uint64, pk string) (string, *big.Int, error) {
 
 	usedGasPrice, _ := w.selectClient().SuggestGasPrice(context.Background())
 	if logLevel == MediumLogLevel {
@@ -439,7 +507,7 @@ func (w *Web3GolangHelper) SignAndSendTransaction(toAddressString string, value 
 	}
 
 	if customGasPrice != nil {
-		usedGasPrice = customGasPrice.(*big.Int)
+		//usedGasPrice = customGasPrice.(*big.Int)
 
 		if logLevel == MediumLogLevel {
 			fmt.Println(ccolor.CyanString("usedGasPrice -> customGasPrice: "), ccolor.YellowString(strconv.Itoa(int(usedGasPrice.Int64())))+"\n")
@@ -451,22 +519,24 @@ func (w *Web3GolangHelper) SignAndSendTransaction(toAddressString string, value 
 		fmt.Println(ccolor.CyanString("usedGasLimit -> defaultGasLimit: "), ccolor.YellowString(strconv.Itoa(int(usedGasLimit)))+"\n")
 	}
 
-	if customGasLimit != nil {
-		usedGasLimit = customGasLimit.(uint64)
+	/*
+		if customGasLimit != nil {
+			usedGasLimit = customGasLimit.(uint64)
 
-		if logLevel == MediumLogLevel {
-			fmt.Println(ccolor.CyanString("usedGasLimit -> customGasLimit: "), ccolor.YellowString(strconv.Itoa(int(usedGasLimit)))+"\n")
-		}
-	} else {
-		if len(data) > 0 {
-			usedGasLimit = w.EstimateGas(toAddressString, data)
 			if logLevel == MediumLogLevel {
-				fmt.Println(ccolor.CyanString("usedGasLimit -> w.EstimateGas: "), ccolor.YellowString(strconv.Itoa(int(usedGasLimit)))+"\n")
+				fmt.Println(ccolor.CyanString("usedGasLimit -> customGasLimit: "), ccolor.YellowString(strconv.Itoa(int(usedGasLimit)))+"\n")
 			}
 		} else {
+			if len(data) > 0 {
+				usedGasLimit = w.EstimateGas(toAddressString, data)
+				if logLevel == MediumLogLevel {
+					fmt.Println(ccolor.CyanString("usedGasLimit -> w.EstimateGas: "), ccolor.YellowString(strconv.Itoa(int(usedGasLimit)))+"\n")
+				}
+			} else {
 
+			}
 		}
-	}
+	*/
 
 	toAddress := common.HexToAddress(toAddressString)
 	fmt.Println("usedGasLimit: ", usedGasLimit)
@@ -475,30 +545,30 @@ func (w *Web3GolangHelper) SignAndSendTransaction(toAddressString string, value 
 	tx := types.NewTransaction(nonce.Uint64(), toAddress, value, usedGasLimit, usedGasPrice, data)
 
 	/*
-	tx := types.NewTx(&types.LegacyTx{
-		Nonce:    nonce.Uint64(),
-		GasPrice: usedGasPrice,
-		Gas:      usedGasLimit,
-		To:       &toAddress,
-		Value:    value,
-		Data:     data,
-	})
+		tx := types.NewTx(&types.LegacyTx{
+			Nonce:    nonce.Uint64(),
+			GasPrice: usedGasPrice,
+			Gas:      usedGasLimit,
+			To:       &toAddress,
+			Value:    value,
+			Data:     data,
+		})
 	*/
 
-    chainID, err := w.selectClient().NetworkID(context.Background())
-    if err != nil {
-        log.Fatal(err)
-    }
+	chainID, err := w.selectClient().NetworkID(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	privateKey, err := crypto.HexToECDSA(pk)
-    if err != nil {
-        log.Fatal(err)
-    }
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-    if err != nil {
-        log.Fatal(err)
-    }
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	sendTxErr := w.selectClient().SendTransaction(context.Background(), signedTx)
 	if sendTxErr != nil {
@@ -533,14 +603,17 @@ func (w *Web3GolangHelper) SignAndSendTransaction(toAddressString string, value 
 func (w *Web3GolangHelper) CancelTx(to string, nonce *big.Int, multiplier int64, pk string) (string, error) {
 
 	gasPrice, _ := w.selectClient().SuggestGasPrice(context.Background())
+	fmt.Println("gasPrice: ", gasPrice)
+	gasPrice = gasPrice.Mul(gasPrice, big.NewInt(multiplier))
+	fmt.Println("gasPrice: ", gasPrice)
 
 	txId, _, err := w.SignAndSendTransaction(
 		to,
 		ToWei(0, 0),
 		make([]byte, 0),
 		nonce,
-		nil,
-		big.NewInt(gasPrice.Int64()*multiplier), pk)
+		big.NewInt(21000),
+		gasPrice.Uint64(), pk)
 
 	if err != nil {
 		return "", err

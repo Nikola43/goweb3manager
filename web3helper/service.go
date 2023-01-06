@@ -637,7 +637,7 @@ func (w *Web3GolangHelper) GenerateContractEventSubscription(contractAddress str
 	return logs, sub, nil
 }
 
-func (w *Web3GolangHelper) Buy(fromAddress common.Address, tokenAddress string, bnbAmount float64) {
+func (w *Web3GolangHelper) Buy(pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64) {
 	// contract addresses
 	pancakeContractAddress := common.HexToAddress("0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3") // pancake router address
 	wBnbContractAddress := "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"                         // wbnb token adddress
@@ -650,7 +650,7 @@ func (w *Web3GolangHelper) Buy(fromAddress common.Address, tokenAddress string, 
 	}
 
 	// calculate gas and gas limit
-	gasLimit := uint64(21000000) // in units
+	gasLimit := uint64(210000) // in units
 	gasPrice, gasPriceErr := gas.SuggestGasPrice(gas.GasPrioritySafeLow)
 	if gasPriceErr != nil {
 		fmt.Println(gasPriceErr)
@@ -683,7 +683,7 @@ func (w *Web3GolangHelper) Buy(fromAddress common.Address, tokenAddress string, 
 	}
 
 	deadline := big.NewInt(time.Now().Unix() + 10000)
-	transactor := w.BuildTransactor(fromAddress, ethValue, gasPrice, gasLimit)
+	transactor := w.BuildTransactor(pk, fromAddress, ethValue, gasPrice, gasLimit)
 
 	fmt.Println("transactor", transactor)
 	fmt.Println("amountOutMin[1]", amountOutMin)
@@ -826,8 +826,8 @@ func (w *Web3GolangHelper) SwitchAccount(plainPrivateKey string) {
 }
 */
 
-func (w *Web3GolangHelper) BuildTransactor(fromAddress common.Address, value *big.Int, gasPrice *big.Int, gasLimit uint64) *bind.TransactOpts {
-	privateKey, privateKeyErr := crypto.HexToECDSA("3062979ebcda3efb3bae3919e003f8e3a3597d9244244a13e4a9ff7776221501")
+func (w *Web3GolangHelper) BuildTransactor(pk string, fromAddress common.Address, value *big.Int, gasPrice *big.Int, gasLimit uint64) *bind.TransactOpts {
+	privateKey, privateKeyErr := crypto.HexToECDSA(pk)
 	//privateKey, privateKeyErr := crypto.HexToECDSA(w.plainPrivateKey)
 
 	if privateKeyErr != nil {

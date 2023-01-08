@@ -454,9 +454,9 @@ func (w *Web3GolangHelper) selectClient() *ethclient.Client {
 func (w *Web3GolangHelper) SendEth(toAddressString string, value int64, pk string) (string, uint64, error) {
 
 	privateKey, err := crypto.HexToECDSA(pk)
-    if err != nil {
-        log.Fatal(err)
-    }
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	publicKey := privateKey.Public()
 	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
@@ -470,7 +470,7 @@ func (w *Web3GolangHelper) SendEth(toAddressString string, value int64, pk strin
 		log.Fatal(err)
 	}
 
-	gasLimit := uint64(21000)                // in units
+	gasLimit := uint64(21000) // in units
 	gasPrice, err := w.httpClient.SuggestGasPrice(context.Background())
 	if err != nil {
 		log.Fatal(err)
@@ -637,11 +637,10 @@ func (w *Web3GolangHelper) GenerateContractEventSubscription(contractAddress str
 	return logs, sub, nil
 }
 
-func (w *Web3GolangHelper) Buy(pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64) {
+func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64) {
 	// contract addresses
-	pancakeContractAddress := common.HexToAddress("0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3") // pancake router address
-	wBnbContractAddress := "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"                         // wbnb token adddress
-	tokenContractAddress := common.HexToAddress(tokenAddress)                                   // eth token adddress
+	pancakeContractAddress := common.HexToAddress(router)               // pancake router address
+	tokenContractAddress := common.HexToAddress(tokenAddress)           // eth token adddress
 
 	// create pancakeRouter pancakeRouterInstance
 	pancakeRouterInstance, instanceErr := pancakeRouter.NewPancake(pancakeContractAddress, w.HttpClient())
@@ -658,7 +657,7 @@ func (w *Web3GolangHelper) Buy(pk string, fromAddress common.Address, tokenAddre
 
 	fmt.Println(
 
-		wBnbContractAddress,
+		weth,
 		tokenContractAddress,
 		pancakeRouterInstance,
 		gasLimit,
@@ -674,7 +673,7 @@ func (w *Web3GolangHelper) Buy(pk string, fromAddress common.Address, tokenAddre
 	fmt.Println("gasFee", gasFee)
 	// set transaction data
 
-	path := GeneratePath(wBnbContractAddress, tokenContractAddress.Hex())
+	path := GeneratePath(weth, tokenContractAddress.Hex())
 
 	opts := &bind.CallOpts{}
 	amountOutMin, getAmountsOutErr := pancakeRouterInstance.GetAmountsOut(opts, ethValue, path)

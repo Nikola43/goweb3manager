@@ -25,6 +25,7 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
 	github.com/hrharder/go-gas v1.0.1
+	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mdp/qrterminal v1.0.1

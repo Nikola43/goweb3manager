@@ -674,23 +674,25 @@ func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Addre
 
 	path := GeneratePath(weth, tokenContractAddress.Hex())
 
-	opts := &bind.CallOpts{}
+	/*
+		opts := &bind.CallOpts{}
 	amountOutMin, getAmountsOutErr := pancakeRouterInstance.GetAmountsOut(opts, ethValue, path)
 	if getAmountsOutErr != nil {
 		fmt.Println(getAmountsOutErr)
 	}
+	*/
 
 	deadline := big.NewInt(time.Now().Unix() + 10000)
 	transactor := w.BuildTransactor(pk, fromAddress, ethValue, gasPrice, gasLimit)
 
-	fmt.Println("transactor", transactor)
-	fmt.Println("amountOutMin[1]", amountOutMin)
-	fmt.Println("amountOutMin[1]", amountOutMin)
-	fmt.Println("deadline", deadline)
-	fmt.Println("FromAddress", fromAddress)
-	fmt.Println("path", path)
+	//fmt.Println("transactor", transactor)
+	//fmt.Println("amountOutMin[1]", amountOutMin)
+	//fmt.Println("amountOutMin[1]", amountOutMin)
+	//fmt.Println("deadline", deadline)
+	//fmt.Println("FromAddress", fromAddress)
+	//fmt.Println("path", path)
 
-	swapTx, SwapExactETHForTokensErr := pancakeRouterInstance.SwapExactETHForTokens(
+	swapTx, SwapExactETHForTokensErr := pancakeRouterInstance.SwapExactETHForTokensSupportingFeeOnTransferTokens(
 		transactor,
 		ethValue,
 		path,
@@ -709,7 +711,7 @@ func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Addre
 	// check if router is eth or bsc
 	if strings.Contains(router, "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D") {
 		// open bscscan
-		genericutils.OpenBrowser("https://goerli.etherscan.com/tx/" + txHash)
+		genericutils.OpenBrowser("https://goerli.etherscan.io/tx/" + txHash)
 	} else {
 		// open etherscan
 		genericutils.OpenBrowser("https://testnet.bscscan.com/tx/" + txHash)

@@ -705,8 +705,15 @@ func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Addre
 
 	txHash := swapTx.Hash().Hex()
 	fmt.Println(txHash)
-	genericutils.OpenBrowser("https://testnet.bscscan.com/tx/" + txHash)
 
+	// check if router is eth or bsc
+	if strings.Contains(router, "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D") {
+		// open bscscan
+		genericutils.OpenBrowser("https://goerli.etherscan.com/tx/" + txHash)
+	} else {
+		// open etherscan
+		genericutils.OpenBrowser("https://testnet.bscscan.com/tx/" + txHash)
+	}
 }
 
 func (w *Web3GolangHelper) BuyV2(fromAddress common.Address, tokenAddress string, value *big.Int, pk string) {

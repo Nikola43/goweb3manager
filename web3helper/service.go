@@ -30,7 +30,6 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 	ccolor "github.com/fatih/color"
 	"github.com/hokaccha/go-prettyjson"
-	"github.com/hrharder/go-gas"
 	"github.com/mdp/qrterminal"
 	"github.com/shopspring/decimal"
 	qrcode "github.com/skip2/go-qrcode"
@@ -639,8 +638,8 @@ func (w *Web3GolangHelper) GenerateContractEventSubscription(contractAddress str
 
 func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64) {
 	// contract addresses
-	pancakeContractAddress := common.HexToAddress(router)               // pancake router address
-	tokenContractAddress := common.HexToAddress(tokenAddress)           // eth token adddress
+	pancakeContractAddress := common.HexToAddress(router)     // pancake router address
+	tokenContractAddress := common.HexToAddress(tokenAddress) // eth token adddress
 
 	// create pancakeRouter pancakeRouterInstance
 	pancakeRouterInstance, instanceErr := pancakeRouter.NewPancake(pancakeContractAddress, w.HttpClient())
@@ -650,7 +649,7 @@ func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Addre
 
 	// calculate gas and gas limit
 	gasLimit := uint64(210000) // in units
-	gasPrice, gasPriceErr := gas.SuggestGasPrice(gas.GasPrioritySafeLow)
+	gasPrice, gasPriceErr := w.selectClient().SuggestGasPrice(context.Background())
 	if gasPriceErr != nil {
 		fmt.Println(gasPriceErr)
 	}

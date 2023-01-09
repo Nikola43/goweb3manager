@@ -31,7 +31,7 @@ type Reserve struct {
 func main() {
 
 	// read .env variables
-	RPC_URL, WS_URL, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS, PK, BUY_AMOUNT, ROUTER_ADDRESS := readEnvVariables()
+	RPC_URL, WS_URL, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS, PK, BUY_AMOUNT, ROUTER_ADDRESS, GAS_MULTIPLIER := readEnvVariables()
 
 	web3GolangHelper := initWeb3(RPC_URL, WS_URL)
 	fromAddress := GeneratePublicAddressFromPrivateKey(PK)
@@ -56,7 +56,7 @@ func main() {
 				if err != nil {
 					fmt.Println(err)
 				}
-				web3GolangHelper.Buy(ROUTER_ADDRESS, WETH_ADDRESS, PK, fromAddress, TOKEN_ADDRESS, buyAmount)
+				web3GolangHelper.Buy(ROUTER_ADDRESS, WETH_ADDRESS, PK, fromAddress, TOKEN_ADDRESS, buyAmount, GAS_MULTIPLIER)
 				os.Exit(0)
 			}
 		}
@@ -84,7 +84,7 @@ func OpenBrowser(url string) {
 }
 
 // function for read .env variables
-func readEnvVariables() (string, string, string, string, string, string, string, string) {
+func readEnvVariables() (string, string, string, string, string, string, string, string, string) {
 	// load .env file
 	err := godotenv.Load()
 	if err != nil {
@@ -99,8 +99,9 @@ func readEnvVariables() (string, string, string, string, string, string, string,
 	PK := os.Getenv("PK")
 	BUY_AMOUNT := os.Getenv("BUY_AMOUNT")
 	ROUTER_ADDRESS := os.Getenv("ROUTER_ADDRESS")
+	GAS_MULTIPLIER := os.Getenv("GAS_MULTIPLIER")
 
-	return RPC_URL, WS_URL, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS, PK, BUY_AMOUNT, ROUTER_ADDRESS
+	return RPC_URL, WS_URL, WETH_ADDRESS, FACTORY_ADDRESS, TOKEN_ADDRESS, PK, BUY_AMOUNT, ROUTER_ADDRESS, GAS_MULTIPLIER
 }
 
 func initWeb3(rpcUrl, wsUrl string) *web3helper.Web3GolangHelper {

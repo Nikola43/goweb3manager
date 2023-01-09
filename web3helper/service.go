@@ -636,7 +636,7 @@ func (w *Web3GolangHelper) GenerateContractEventSubscription(contractAddress str
 	return logs, sub, nil
 }
 
-func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64) {
+func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64, gasMultiplier string) {
 	// contract addresses
 	pancakeContractAddress := common.HexToAddress(router)     // pancake router address
 	tokenContractAddress := common.HexToAddress(tokenAddress) // eth token adddress
@@ -653,6 +653,15 @@ func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Addre
 	if gasPriceErr != nil {
 		fmt.Println(gasPriceErr)
 	}
+
+	// convert gas multiplier to float
+	gasMultiplierFloat, gasMultiplierFloatErr := strconv.ParseFloat(gasMultiplier, 64)
+	if gasMultiplierFloatErr != nil {
+		fmt.Println(gasMultiplierFloatErr)
+	}
+
+	// update gas price with multiplier
+	gasPrice = gasPrice.Mul(gasPrice, big.NewInt(int64(gasMultiplierFloat)))
 
 	fmt.Println(
 
@@ -675,11 +684,11 @@ func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Addre
 	path := GeneratePath(weth, tokenContractAddress.Hex())
 
 	/*
-		opts := &bind.CallOpts{}
-	amountOutMin, getAmountsOutErr := pancakeRouterInstance.GetAmountsOut(opts, ethValue, path)
-	if getAmountsOutErr != nil {
-		fmt.Println(getAmountsOutErr)
-	}
+			opts := &bind.CallOpts{}
+		amountOutMin, getAmountsOutErr := pancakeRouterInstance.GetAmountsOut(opts, ethValue, path)
+		if getAmountsOutErr != nil {
+			fmt.Println(getAmountsOutErr)
+		}
 	*/
 
 	deadline := big.NewInt(time.Now().Unix() + 10000)

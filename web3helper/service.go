@@ -39,7 +39,6 @@ import (
 	pancakeFactory "github.com/nikola43/web3golanghelper/contracts/IPancakeFactory"
 	pancakePair "github.com/nikola43/web3golanghelper/contracts/IPancakePair"
 	pancakeRouter "github.com/nikola43/web3golanghelper/contracts/IPancakeRouter02"
-	"github.com/nikola43/web3golanghelper/genericutils"
 )
 
 type Reserve struct {
@@ -636,7 +635,7 @@ func (w *Web3GolangHelper) GenerateContractEventSubscription(contractAddress str
 	return logs, sub, nil
 }
 
-func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64, gasMultiplier string) {
+func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Address, tokenAddress string, bnbAmount float64, gasMultiplier string) string {
 	// contract addresses
 	pancakeContractAddress := common.HexToAddress(router)     // pancake router address
 	tokenContractAddress := common.HexToAddress(tokenAddress) // eth token adddress
@@ -717,14 +716,7 @@ func (w *Web3GolangHelper) Buy(router, weth, pk string, fromAddress common.Addre
 	txHash := swapTx.Hash().Hex()
 	fmt.Println(txHash)
 
-	// check if router is eth or bsc
-	if strings.Contains(router, "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D") {
-		// open bscscan
-		genericutils.OpenBrowser("https://goerli.etherscan.io/tx/" + txHash)
-	} else {
-		// open etherscan
-		genericutils.OpenBrowser("https://testnet.bscscan.com/tx/" + txHash)
-	}
+	return txHash
 }
 
 func (w *Web3GolangHelper) BuyV2(fromAddress common.Address, tokenAddress string, value *big.Int, pk string) {

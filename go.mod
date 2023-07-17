@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/ethereum/go-ethereum v1.10.19
 	github.com/fatih/color v1.13.0
+	github.com/lib/pq v1.10.9
 	github.com/shopspring/decimal v1.3.1
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 )
@@ -24,7 +25,6 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20211117102719-0474bc63780f
-	github.com/hrharder/go-gas v1.0.1
 	github.com/joho/godotenv v1.4.0
 	github.com/mattn/go-colorable v0.1.12 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect

@@ -14,7 +14,6 @@ func main2() {
 	wsUrl := "wss://eth-goerli.nodereal.io/ws/v1/703500179cfc4348b90bebc0b3fba854"
 	pk := "cfedfad8629f43cfffda1bc9a4c97e1aa4461615f8331b0760272f9303b2838e"
 	web3Helper := web3helper.NewWeb3GolangHelper(rpcUrl, wsUrl)
-	
 
 	chainID, err := web3Helper.HttpClient().ChainID(context.Background())
 	if err != nil {

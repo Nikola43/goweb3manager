@@ -31,7 +31,6 @@ func main() {
 	}
 	fmt.Println(tx)
 
-
 	tx, err = web3Helper.CancelTx("0xf0d7f526c0a706745d9bbdbd66a1a36e0f40da0f", big.NewInt(int64(nonce)), 10, pk)
 	if err != nil {
 		fmt.Println(err)
